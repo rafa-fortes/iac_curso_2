@@ -1,0 +1,28 @@
+- hosts: terraform-ansible
+  tasks:
+  - name: Instalando o python3, virtualenv
+    apt:
+      pkg:
+      - python3
+      - virtualenv
+      update_cache: yes
+    become: yes
+  - name: Instalando dependencias com pip (Django e Django Rest)
+    pip:
+      virtualenv: /home/ubuntu/tcc/venv
+      name:
+        - django
+        - djangorestframework
+  - name: Verificando se o projeto ja existe
+    stat:                                       #!Stat de estado. Ele vai verificar como está o estado, no caso, do nosso arquivo. Para ver se o arquivo já existe.
+      path: /home/ubuntu/tcc/setup/settings.py  #!  Vou pegar a pasta "setup" e vamos colocar o "settings.py" porque sabemos que se for iniciado vai precisar que ele esteja lá.
+    register: projeto                           #! Então vamos usar uma nova tag que é register de "registra" para registrar alguma coisa. Ou seja, para criarmos essa variável. Vou chamar essa variável de register: projeto. Se ela for true o projeto já existe, se ela for false ele não existe ainda
+  - name: Iniciando o projeto
+    shell: '. /home/ubuntu/tcc/venv/bin/activate; django-admin startproject setup /home/ubuntu/tcc/'
+    when: not projeto.stat.exists               #! Queremos ver no projeto que salvamos se o comando stat do arquivo que executamos, existe. Se o "settings.py" não existir, aí executamos o comando.
+  - name: Alterando o hosts do settings
+    lineinfile:
+      path: /home/ubuntu/tcc/setup/settings.py
+      regexp: 'ALLOWED_HOSTS'
+      line: 'ALLOWED_HOSTS = ["*"]'
+      backrefs: yes
